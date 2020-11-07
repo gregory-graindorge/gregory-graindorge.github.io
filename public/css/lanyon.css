@@ -607,6 +607,9 @@ a.pagination-item:hover {
 .theme-base-11 .sidebar-item{
   text-align: center;
 }
+.theme-base-11{
+  background-color: #1b1b1b;
+}
 .theme-base-11 .sidebar-item img{
   margin: 0 auto 1em auto;
   border-radius: 50%;
