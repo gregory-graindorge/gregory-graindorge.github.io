@@ -1,7 +1,7 @@
 # Setup
 title:               R0cK - Blog
 tagline:             'A simple blog about cyber security.'
-description:         'Blog about cyber security. CTF stuff on hackthebox and tryhackme.'
+description:         'Blog about cyber security, CTF and other challenges.'
 url:                 https://R0cK-blog.github.io
 baseurl:             ''
 paginate:            5
