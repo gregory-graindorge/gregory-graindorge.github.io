@@ -2,7 +2,7 @@
 title:               R0cK - Blog
 tagline:             'A simple blog about cyber security.'
 description:         'Blog about cyber security. CTF stuff on hackthebox and tryhackme.'
-url:                 http://R0cK-blog.github.io
+url:                 https://R0cK-blog.github.io
 baseurl:             ''
 paginate:            5
 permalink:           pretty
